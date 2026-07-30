@@ -20,6 +20,27 @@ You can start editing the page by modifying `app/page.js`. The page auto-updates
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Local services
+
+This app expects a MySQL server (see `.env.local.example` for connection vars) and, for rate limiting and the background job queue, a Redis instance:
+
+```bash
+docker run -p 6379:6379 redis
+```
+
+Copy `.env.local.example` to `.env.local` and fill in your values, then:
+
+```bash
+npm run migrate       # apply pending DB migrations
+npm run seed          # seed roles/permissions
+npm run assign-role -- <email> <role>   # e.g. assign-role -- me@example.com admin
+npm run queue:work    # start the background job worker (separate process)
+```
+
+Other useful scripts: `npm run migrate:status` (list applied/pending migrations), `npm run migrate:undo` (roll back the last migration).
+
+Outgoing mail (e.g. the welcome email sent after signup) defaults to `MAIL_DRIVER=log`, which just prints the message to the worker's console — no setup needed. Set `MAIL_DRIVER=smtp` plus the `SMTP_*` vars to send for real through any SMTP provider (Mailtrap for local testing, SES/Postmark/SendGrid/Gmail in production).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

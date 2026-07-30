@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ---------------------------------------
+# my ignores
+.env.local
+
+# local file storage driver (see src/lib/storage.js)
+/storage/uploads/*
+!/storage/uploads/.gitkeep
