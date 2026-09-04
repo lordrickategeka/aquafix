@@ -13,7 +13,7 @@ export async function POST(request) {
       password: 'required',
     });
     if (!valid) return fail('Validation failed', 422, errors);
-
+// here
     const { email, password } = body;
     const user = await User.findOne({ where: { email } });
 
