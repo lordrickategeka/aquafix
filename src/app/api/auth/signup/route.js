@@ -4,7 +4,7 @@ import { User } from '@/models';
 import { validate } from '@/lib/validate';
 import { success, fail } from '@/lib/api-response';
 import { buildFlashCookie } from '@/lib/flash';
-import { enqueue } from '@/lib/queue';
+import { emit, EVENTS } from '@/lib/events';
 
 export async function POST(request) {
   try {
@@ -23,9 +23,9 @@ export async function POST(request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await User.create({ email, password: hashedPassword });
+    const user = await User.create({ email, password: hashedPassword });
 
-    await enqueue('send-welcome-email', { email });
+    await emit(EVENTS.USER_REGISTERED, { id: user.id, email: user.email });
 
     const cookieStore = await cookies();
     cookieStore.set(buildFlashCookie('success', 'Account created.'));

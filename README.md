@@ -114,6 +114,21 @@ backend via `STORAGE_DRIVER`:
 `POST /api/uploads` (authenticated) returns `{ key, uploadUrl, publicUrl }`; the client then
 PUTs the file bytes directly to `uploadUrl`.
 
+### Events
+
+`src/lib/events.js` is the Laravel `Event::dispatch()` equivalent — an in-process pub/sub
+bus (`on(event, listener)` / `emit(event, payload)`) so code that triggers something (e.g.
+signup) doesn't need to know everything that should happen as a result. Event names are
+listed in `EVENTS`; listeners live one-per-file in `src/lib/events/listeners/` and are wired
+to an event in `src/lib/events/listeners/index.js`, the only file that needs to change to
+add a new one. `src/instrumentation.js` imports that registry once when the server boots.
+
+`emit()` is fail-open like `enqueue()` below: listeners run concurrently, are isolated from
+each other (one throwing or taking longer than 5s doesn't stop or fail the others), and never
+throw back into the caller — so a broken listener can't fail or hang the request that
+triggered it. Keep listeners themselves fast; hand off actual work to the job queue (as
+`send-welcome-email` does) rather than doing it inline.
+
 ### Queue & background jobs
 
 Redis + BullMQ (`src/lib/queue.js`, `workers/index.js`). `enqueue(jobName, data)` pushes a
