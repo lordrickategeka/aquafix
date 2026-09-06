@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kyenjojo TWSS — Water Supply &amp; Billing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace']
+      },
+      colors: {
+        ink: '#0F1E24',
+        canvas: '#EEF1F0',
+        line: { DEFAULT: '#E1E8E6', soft: '#EDF1F0', faint: '#F2F5F4' },
+        muted: { DEFAULT: '#8B9A98', deep: '#5F7371' },
+        brand: {
+          50: '#F0F6F5', 100: '#E3F0EF', 200: '#CFE3E1', 300: '#9BC9C6',
+          500: '#12807C', 600: '#0E6E6B', 700: '#0F3F3E', 800: '#123B3D', 900: '#0B2A2C'
+        },
+        ok: { bg: '#E6F2EC', fg: '#2F6B3F', dot: '#2F8F6E' },
+        warn: { bg: '#FBF0DC', fg: '#8A5A0B', dot: '#E4B75C' },
+        bad: { bg: '#F8E3E0', fg: '#A6362B', dot: '#C4574A' },
+        info: { bg: '#E3EDF4', fg: '#2C5A7A' }
+      }
+    }
+  }
+};
+</script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-canvas text-ink font-sans antialiased">
+
+<div class="flex h-screen w-full overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-[236px] flex-none bg-brand-900 flex flex-col pt-[18px] pb-3">
+    <div class="px-[18px] pb-[18px] flex gap-[11px] items-center">
+      <div class="w-[34px] h-[34px] flex-none rounded-[9px] bg-brand-500 grid place-items-center font-bold text-white text-[15px]">KW</div>
+      <div class="leading-tight">
+        <div class="text-white text-[13.5px] font-semibold">Kyenjojo TWSS</div>
+        <div class="text-[#6E9694] text-[11px]">Water &amp; Billing</div>
+      </div>
+    </div>
+    <nav id="nav" class="px-3 flex flex-col gap-px overflow-y-auto"></nav>
+    <div class="mt-auto px-[18px] pt-3.5 border-t border-[#143638] flex gap-2.5 items-center">
+      <div class="w-7 h-7 rounded-full bg-[#2C5F5D] text-[#CFE7E5] text-[11px] font-semibold grid place-items-center">AN</div>
+      <div class="leading-tight">
+        <div class="text-[#CFE7E5] text-xs">Ayebare Nsubuga</div>
+        <div class="text-[#5C8785] text-[10.5px]">Billing Officer</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 min-w-0 flex flex-col bg-canvas">
+    <header class="h-[58px] flex-none bg-white border-b border-line flex items-center gap-4 px-6">
+      <div id="page-title" class="text-base font-semibold tracking-[-0.01em] whitespace-nowrap shrink-0">Operations overview</div>
+      <div id="page-sub" class="text-xs text-[#7A8B89] border-l border-line pl-4 whitespace-nowrap shrink overflow-hidden text-ellipsis">Kyenjojo Town · 3,412 connections</div>
+      <div class="ml-auto flex items-center gap-2.5 min-w-0 flex-1 justify-end">
+        <label class="flex-1 min-w-[120px] max-w-[230px] flex items-center gap-[7px] bg-[#F1F5F4] border border-line rounded-[7px] px-[11px] py-[7px]">
+          <span class="text-[#9AA9A7] text-xs">⌕</span>
+          <input class="bg-transparent outline-none text-[12.5px] w-full placeholder:text-[#9AA9A7]" placeholder="Search account, meter, name…" />
+        </label>
+        <div class="hidden xl:block flex-none font-mono text-[11.5px] text-muted-deep bg-[#F1F5F4] border border-line px-2.5 py-[7px] rounded-[7px] whitespace-nowrap">Cycle 2026-09 · open</div>
+        <div class="w-8 h-8 flex-none rounded-lg bg-[#F1F5F4] border border-line grid place-items-center text-[13px] text-muted-deep">◔</div>
+      </div>
+    </header>
+
+    <main id="view" class="flex-1 overflow-y-auto px-6 pt-[22px] pb-10"></main>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

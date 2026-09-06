@@ -8,12 +8,26 @@ const CHECKS = {
   min(value, param) {
     return String(value).length >= Number(param);
   },
+  integer(value) {
+    return Number.isInteger(Number(value));
+  },
+  // Whole number of UGX or m³ — never negative, never fractional.
+  positive(value) {
+    return Number.isInteger(Number(value)) && Number(value) >= 0;
+  },
+  // in:domestic,institutional,commercial
+  in(value, param) {
+    return String(param).split(',').includes(String(value));
+  },
 };
 
 const MESSAGES = {
   required: (field) => `${field} is required`,
   email: (field) => `${field} must be a valid email`,
   min: (field, param) => `${field} must be at least ${param} characters`,
+  integer: (field) => `${field} must be a whole number`,
+  positive: (field) => `${field} must be a whole number, zero or more`,
+  in: (field, param) => `${field} must be one of: ${String(param).split(',').join(', ')}`,
 };
 
 // schema: { fieldName: 'required|email', otherField: 'required|min:8' }

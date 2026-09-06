@@ -37,15 +37,15 @@ export default function AdminPanel({ initialUsers, initialRoles, initialPermissi
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex gap-2 border-b border-black/[.08] dark:border-white/[.145]">
+      <div className="flex gap-2 border-b border-line">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
               tab === key
-                ? 'border-zinc-950 text-zinc-950 dark:border-zinc-50 dark:text-zinc-50'
-                : 'border-transparent text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50'
+                ? 'border-brand-500 text-ink'
+                : 'border-transparent text-muted hover:text-ink'
             }`}
           >
             {label}
@@ -53,7 +53,7 @@ export default function AdminPanel({ initialUsers, initialRoles, initialPermissi
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-bad-fg">{error}</p>}
 
       {tab === 'users' && (
         <UsersTab users={initialUsers} roles={initialRoles} busy={busy} request={request} />
@@ -75,13 +75,13 @@ export default function AdminPanel({ initialUsers, initialRoles, initialPermissi
 
 function Chip({ label, onRemove, disabled }) {
   return (
-    <span className="flex items-center gap-1 rounded-full border border-black/[.08] px-2.5 py-1 text-xs font-medium text-zinc-700 dark:border-white/[.145] dark:text-zinc-300">
+    <span className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs font-medium text-muted-deep">
       {label}
       <button
         onClick={onRemove}
         disabled={disabled}
         aria-label={`Remove ${label}`}
-        className="text-zinc-400 hover:text-red-600 disabled:opacity-50 dark:hover:text-red-400"
+        className="text-muted hover:text-bad-fg disabled:opacity-50"
       >
         &times;
       </button>
@@ -98,7 +98,7 @@ function AssignControl({ label, options, value, onChange, onAssign, busy }) {
         value={value}
         onChange={onChange}
         disabled={busy}
-        className="rounded-lg border border-black/[.08] bg-transparent px-2 py-1 text-xs text-zinc-950 outline-none focus:border-zinc-950 dark:border-white/[.145] dark:text-zinc-50 dark:focus:border-zinc-50"
+        className="rounded-lg border border-line bg-transparent px-2 py-1 text-xs text-ink outline-none focus:border-brand-500"
       >
         <option value="">{label}</option>
         {options.map((option) => (
@@ -110,7 +110,7 @@ function AssignControl({ label, options, value, onChange, onAssign, busy }) {
       <button
         onClick={onAssign}
         disabled={busy || !value}
-        className="rounded-full border border-black/[.08] px-3 py-1 text-xs font-medium hover:bg-black/[.04] disabled:opacity-50 dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
+        className="rounded-lg border border-line px-3 py-1 text-xs font-medium hover:bg-[#F1F5F4] disabled:opacity-50"
       >
         Add
       </button>
@@ -145,18 +145,18 @@ function UsersTab({ users, roles, busy, request }) {
         return (
           <div
             key={user.id}
-            className="flex flex-col gap-3 rounded-2xl border border-black/[.08] p-4 dark:border-white/[.145] sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-[11px] border border-line bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <div>
-              <p className="text-sm font-medium text-zinc-950 dark:text-zinc-50">{user.email}</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-sm font-medium text-ink">{user.email}</p>
+              <p className="text-xs text-muted">
                 Joined {new Date(user.createdAt).toLocaleDateString()}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               {user.roles.length === 0 && (
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">No roles</span>
+                <span className="text-xs text-muted">No roles</span>
               )}
               {user.roles.map((role) => (
                 <Chip
@@ -225,12 +225,12 @@ function RolesTab({ roles, permissions, busy, request }) {
           onChange={(e) => setName(e.target.value)}
           placeholder="New role name"
           disabled={busy}
-          className="flex-1 rounded-lg border border-black/[.08] bg-transparent px-3 py-2 text-sm text-zinc-950 outline-none focus:border-zinc-950 dark:border-white/[.145] dark:text-zinc-50 dark:focus:border-zinc-50"
+          className="flex-1 rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-ink outline-none focus:border-brand-500"
         />
         <button
           type="submit"
           disabled={busy || !name.trim()}
-          className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] disabled:opacity-50 dark:hover:bg-[#ccc]"
+          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0A5453] disabled:opacity-50"
         >
           Create role
         </button>
@@ -244,14 +244,14 @@ function RolesTab({ roles, permissions, busy, request }) {
           return (
             <div
               key={role.id}
-              className="flex flex-col gap-3 rounded-2xl border border-black/[.08] p-4 dark:border-white/[.145]"
+              className="flex flex-col gap-3 rounded-[11px] border border-line bg-white p-4"
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-zinc-950 dark:text-zinc-50">{role.name}</p>
+                <p className="text-sm font-medium text-ink">{role.name}</p>
                 <button
                   onClick={() => handleDelete(role.id)}
                   disabled={busy}
-                  className="text-xs font-medium text-zinc-500 hover:text-red-600 disabled:opacity-50 dark:text-zinc-400 dark:hover:text-red-400"
+                  className="text-xs font-medium text-muted hover:text-bad-fg disabled:opacity-50"
                 >
                   Delete
                 </button>
@@ -259,7 +259,7 @@ function RolesTab({ roles, permissions, busy, request }) {
 
               <div className="flex flex-wrap items-center gap-2">
                 {role.permissions.length === 0 && (
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">No permissions</span>
+                  <span className="text-xs text-muted">No permissions</span>
                 )}
                 {role.permissions.map((permission) => (
                   <Chip
@@ -315,12 +315,12 @@ function PermissionsTab({ permissions, busy, request }) {
           onChange={(e) => setName(e.target.value)}
           placeholder="New permission name"
           disabled={busy}
-          className="flex-1 rounded-lg border border-black/[.08] bg-transparent px-3 py-2 text-sm text-zinc-950 outline-none focus:border-zinc-950 dark:border-white/[.145] dark:text-zinc-50 dark:focus:border-zinc-50"
+          className="flex-1 rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-ink outline-none focus:border-brand-500"
         />
         <button
           type="submit"
           disabled={busy || !name.trim()}
-          className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] disabled:opacity-50 dark:hover:bg-[#ccc]"
+          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0A5453] disabled:opacity-50"
         >
           Create permission
         </button>
@@ -330,15 +330,15 @@ function PermissionsTab({ permissions, busy, request }) {
         {permissions.map((permission) => (
           <div
             key={permission.id}
-            className="flex items-center justify-between rounded-2xl border border-black/[.08] px-4 py-3 dark:border-white/[.145]"
+            className="flex items-center justify-between rounded-[11px] border border-line px-4 py-3"
           >
-            <p className="text-sm font-medium text-zinc-950 dark:text-zinc-50">
+            <p className="text-sm font-medium text-ink">
               {permission.name}
             </p>
             <button
               onClick={() => handleDelete(permission.id)}
               disabled={busy}
-              className="text-xs font-medium text-zinc-500 hover:text-red-600 disabled:opacity-50 dark:text-zinc-400 dark:hover:text-red-400"
+              className="text-xs font-medium text-muted hover:text-bad-fg disabled:opacity-50"
             >
               Delete
             </button>

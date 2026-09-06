@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The billing console runs on the office LAN over plain HTTP, and Android has
+  blocked cleartext by default since API 28, so without this the app cannot
+  reach it at all.
+
+  This permits cleartext generally rather than for named hosts. Android's
+  <domain> element matches hostnames only — it has no notion of an IP range —
+  and the server's address is typed in by whoever sets the handset up, so there
+  is no fixed host to pin. Narrowing it would mean hard-coding one office's IP.
+
+  The exposure is real but bounded: the app talks to one address, over the
+  office network, carrying meter readings. When the console gets a certificate,
+  set this back to false and delete the networkSecurityConfig attribute in
+  AndroidManifest.xml.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

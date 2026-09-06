@@ -42,12 +42,17 @@ npm run dev                              # start the app — http://localhost:30
 npm run queue:work                       # start the background job worker (separate terminal)
 ```
 
-To make yourself an admin (required to reach `/dashboard/admin`), sign up through the app,
-then:
+There is no seeded login — `npm run seed` only creates roles and permissions, never users.
+To get a first admin account (required to reach `/dashboard/admin`) without going through
+the signup form:
 
 ```bash
-npm run assign-role -- you@example.com admin
+npm run seed:admin -- you@example.com yourpassword
 ```
+
+It creates the user, hashes the password the same way signup does, and assigns the `admin`
+role. Run it again with `--reset-password` if you forget the password. If the account
+already exists, `npm run assign-role -- you@example.com admin` just adds the role.
 
 ## Scripts
 
@@ -59,9 +64,42 @@ npm run assign-role -- you@example.com admin
 | `npm run migrate` | Apply pending migrations |
 | `npm run migrate:status` | List applied/pending migrations |
 | `npm run migrate:undo` | Roll back the last migration |
-| `npm run seed` | Seed roles/permissions (`admin`, `user`; `manage-users`, `delete-posts`) |
+| `npm run seed` | Seed roles/permissions (`admin`, `user`, `billing-officer`, `meter-reader`, `cashier`) |
+| `npm run seed:admin -- <email> <password> [role]` | Create a user (default role `admin`); add `--reset-password` to overwrite an existing user's password |
+| `npm run seed:demo [-- --fresh]` | Seed zones, tariffs, ~40 consumers and two billed cycles of demo history |
 | `npm run assign-role -- <email> <role>` | Assign a role to an existing user |
 | `npm run queue:work` | Start the BullMQ worker that processes background jobs (e.g. sending mail) |
+
+## The billing pipeline
+
+```
+Consumer (zone, category, metered | flat-rate)
+   └─ per cycle ─→ Reading (previous → current, usage, flag)
+                      └─ review exceptions → lock cycle
+                           └─ billing run → Bill + lines → ledger debit
+                                              └─ Payment → ledger credit → balance
+```
+
+- **Cycles** move `open → locked → billed → closed`. Readings are only editable while
+  the cycle is open, and locking refuses while exceptions are unresolved (override with
+  "lock anyway", which leaves those accounts unbilled).
+- **Readings** are flagged automatically (`ok`, `high`, `zero`, `negative`, `missed`) by
+  `flagReading()` in `src/lib/billing.js`. Only `approved` readings reach the run; a
+  clean reading approves itself, anything else waits for a human.
+- **Pricing** lives in `src/lib/billing.js` as pure functions. Bands are progressive and
+  cumulative: `(0,5)`, `(5,20)`, `(20,null)`. The sewerage levy applies to consumption
+  plus the fixed charge, not to arrears. Unmetered accounts bill at their category's
+  `flat_rate`.
+- **The run** (`src/lib/billing-run.js`) bills each consumer in its own transaction, so
+  one bad account cannot roll back the rest. `UNIQUE(consumer_id, billing_cycle_id)` on
+  `bills` makes a re-run skip what already exists instead of double-billing.
+- **Money** is whole UGX in `BIGINT` (never floats), and every movement is a row in
+  `ledger_entries`. `consumers.balance` is a cache of `SUM(ledger_entries.amount)`
+  written in the same transaction; `recomputeBalance()` in `src/lib/ledger.js` repairs it
+  if you ever suspect drift. A bill posts only that cycle's charges — the brought-forward
+  figure printed on it is already on the account.
+- **Bill lines** are frozen copies of how the total was reached, so re-pricing a tariff
+  never changes an invoice that has already been issued.
 
 ## How it's put together
 

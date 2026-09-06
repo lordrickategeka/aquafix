@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { userHasRole } from '@/lib/rbac';
 import { User, Role, Permission } from '@/models';
@@ -24,24 +23,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-            Users, roles &amp; permissions
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Assign roles to users and permissions to roles.
-          </p>
-        </div>
-        <Link
-          href="/dashboard"
-          className="text-sm font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-        >
-          Back to dashboard
-        </Link>
-      </div>
-
+    <div className="mx-auto w-full max-w-4xl">
       <AdminPanel
         initialUsers={users.map((user) => ({
           id: user.id,

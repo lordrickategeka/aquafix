@@ -6,6 +6,8 @@ import { EventEmitter } from 'node:events';
 export const EVENTS = {
   USER_REGISTERED: 'user.registered',
   USER_LOGGED_IN: 'user.logged_in',
+  BILLING_RUN_COMPLETED: 'billing.run_completed',
+  PAYMENT_RECORDED: 'payment.recorded',
 };
 
 // Same globalThis-caching pattern as src/lib/db.js, redis.js and queue.js:

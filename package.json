@@ -11,8 +11,14 @@
     "migrate:undo": "node database/migrate.js down",
     "migrate:status": "node database/migrate.js status",
     "seed": "node database/seed.js",
+    "seed:admin": "node database/seed-admin.js",
+    "seed:demo": "node database/seed-demo.js",
     "assign-role": "node database/assign-role.js",
-    "queue:work": "node workers/index.js"
+    "queue:work": "node workers/index.js",
+    "reset:data": "node database/reset-data.js",
+    "sandbox:setup": "node database/sandbox.js setup",
+    "sandbox:reset": "node database/sandbox.js reset",
+    "dev:sandbox": "node database/sandbox.js dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1098.0",

@@ -1,26 +1,72 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #EEF1F0;
+  --foreground: #0F1E24;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: #0F1E24;
+  --color-canvas: #EEF1F0;
+
+  --color-line: #E1E8E6;
+  --color-line-soft: #EDF1F0;
+  --color-line-faint: #F2F5F4;
+
+  --color-muted: #8B9A98;
+  --color-muted-deep: #5F7371;
+
+  --color-brand-50: #F0F6F5;
+  --color-brand-100: #E3F0EF;
+  --color-brand-200: #CFE3E1;
+  --color-brand-300: #9BC9C6;
+  --color-brand-500: #12807C;
+  --color-brand-600: #0E6E6B;
+  --color-brand-700: #0F3F3E;
+  --color-brand-800: #123B3D;
+  --color-brand-900: #0B2A2C;
+
+  --color-ok-bg: #E6F2EC;
+  --color-ok-fg: #2F6B3F;
+  --color-ok-dot: #2F8F6E;
+
+  --color-warn-bg: #FBF0DC;
+  --color-warn-fg: #8A5A0B;
+  --color-warn-dot: #E4B75C;
+
+  --color-bad-bg: #F8E3E0;
+  --color-bad-fg: #A6362B;
+  --color-bad-dot: #C4574A;
+
+  --color-info-bg: #E3EDF4;
+  --color-info-fg: #2C5A7A;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5D3; border-radius: 8px; border: 3px solid #EEF1F0; }
+
+/* Printing a bill should produce the bill, not the console around it. */
+@media print {
+  aside,
+  header {
+    display: none !important;
+  }
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  body {
+    background: #fff;
+  }
 }

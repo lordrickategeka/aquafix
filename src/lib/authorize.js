@@ -30,3 +30,20 @@ export async function requirePermission(permissionName) {
   }
   return { user, response: null };
 }
+
+/* For routes that serve more than one job. The account lookup in the field app
+   is wanted by a meter reader (who has capture-readings) and by a cashier (who
+   has record-payments and nothing else); demanding either one would lock out
+   half the people who need it. */
+export async function requireAnyPermission(permissionNames) {
+  const { user, response } = await requireSession();
+  if (response) return { user: null, response };
+
+  const held = await Promise.all(
+    permissionNames.map((name) => userHasPermission(user.id, name)),
+  );
+  if (!held.some(Boolean)) {
+    return { user: null, response: fail('This action is unauthorized.', 403) };
+  }
+  return { user, response: null };
+}

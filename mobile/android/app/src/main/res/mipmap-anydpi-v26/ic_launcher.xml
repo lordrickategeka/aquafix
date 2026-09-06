@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The layered icon Android 8+ masks to the launcher's shape. Without this the
+  launcher falls back to the legacy bitmap and pads it onto a white circle,
+  which is how a square logo ends up sitting inside a circle of everyone else's
+  icons.
+
+  monochrome drives the themed icons introduced in Android 13: the system tints
+  the same silhouette to the user's wallpaper palette.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>

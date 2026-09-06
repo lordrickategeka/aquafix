@@ -14,10 +14,19 @@ function loadEnv() {
   }
 }
 
-const ROLES = ['admin', 'user'];
-const PERMISSIONS = ['manage-users', 'delete-posts'];
+const ROLES = ['admin', 'user', 'billing-officer', 'meter-reader', 'cashier'];
+const PERMISSIONS = [
+  'manage-users',
+  'manage-consumers',
+  'capture-readings',
+  'run-billing',
+  'record-payments',
+];
 const ROLE_PERMISSIONS = {
-  admin: ['manage-users', 'delete-posts'],
+  admin: PERMISSIONS,
+  'billing-officer': ['manage-consumers', 'capture-readings', 'run-billing', 'record-payments'],
+  'meter-reader': ['capture-readings'],
+  cashier: ['record-payments'],
 };
 
 async function main() {
