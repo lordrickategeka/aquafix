@@ -41,7 +41,7 @@ npm ci
 npm run migrate          # creates the database if missing, applies all 10 migrations
 npm run seed             # roles and permissions — required before any account exists
 npm run build
-npm start                # or run it under pm2/systemd
+npm start                # listens on :3006 — or run it under pm2/systemd
 ```
 
 Then create the people who will use it. `seed:admin` takes `email password
@@ -56,7 +56,22 @@ npm run seed:admin -- cashier@example.com  'a-real-password' cashier
 Passwords must be at least 8 characters. `-- --reset-password` changes one for
 an account that already exists.
 
+`npm run seed:users -- --domain your-domain.example` does the same thing in one
+step — one account per role, each with its own random password, printed once
+when it runs and stored nowhere else. Copy them off the screen before you close
+the terminal; `--reset-password` is the only way back. Do not pass `--password`
+on a live deployment: it gives every seeded account the same known password.
+
 ## 4. Behind the reverse proxy
+
+`npm start` binds **port 3006** (`next start -p 3006` in `package.json`), so the
+proxy upstream is `http://127.0.0.1:3006`. Development is untouched — `npm run
+dev` still uses 3000, and the sandbox 3001.
+
+The flag beats the environment: `PORT=3007 npm start` still comes up on 3006,
+because an explicit `-p` overrides `PORT`. Change the script, or call `npx next
+start -p <port>` directly. `PORT` in `.env.local` does nothing either way — the
+HTTP server binds before Next loads any env file.
 
 Forward `X-Forwarded-For`. `getClientIp()` reads it, and rate limiting keys on
 it — without it every request looks like one client and the login limit (10 per

@@ -54,6 +54,18 @@ It creates the user, hashes the password the same way signup does, and assigns t
 role. Run it again with `--reset-password` if you forget the password. If the account
 already exists, `npm run assign-role -- you@example.com admin` just adds the role.
 
+To get one login per role in a single step — useful for trying the console as a reader or
+a cashier rather than as an admin:
+
+```bash
+npm run seed:users
+```
+
+That creates `admin@`, `billing@`, `reader@`, `cashier@` and `staff@aquafix.local`, each
+with a different random password printed once when it runs. Pass `--domain` to change the
+addresses, or `--password <shared>` if one known password across all five is easier
+locally. Re-running leaves existing accounts alone unless you pass `--reset-password`.
+
 ## Scripts
 
 | Script | Does |
@@ -66,6 +78,7 @@ already exists, `npm run assign-role -- you@example.com admin` just adds the rol
 | `npm run migrate:undo` | Roll back the last migration |
 | `npm run seed` | Seed roles/permissions (`admin`, `user`, `billing-officer`, `meter-reader`, `cashier`) |
 | `npm run seed:admin -- <email> <password> [role]` | Create a user (default role `admin`); add `--reset-password` to overwrite an existing user's password |
+| `npm run seed:users` | Create one user per role with random passwords printed once; `--domain`, `--password`, `--roles`, `--reset-password` |
 | `npm run seed:demo [-- --fresh]` | Seed zones, tariffs, ~40 consumers and two billed cycles of demo history |
 | `npm run assign-role -- <email> <role>` | Assign a role to an existing user |
 | `npm run queue:work` | Start the BullMQ worker that processes background jobs (e.g. sending mail) |
