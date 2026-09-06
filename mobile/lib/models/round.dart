@@ -37,6 +37,29 @@ class Cycle {
       };
 }
 
+/// One earlier cycle's consumption, for the history on a meter's profile.
+/// Carries the period so a reader can answer "what did I use in July?" rather
+/// than reading three unlabelled numbers.
+class ConsumptionRow {
+  const ConsumptionRow({required this.period, this.usageM3, this.currentValue});
+
+  final String period;
+  final int? usageM3;
+  final int? currentValue;
+
+  factory ConsumptionRow.fromJson(Map<String, dynamic> json) => ConsumptionRow(
+        period: json['period'] as String? ?? '',
+        usageM3: (json['usage_m3'] as num?)?.toInt(),
+        currentValue: (json['current_value'] as num?)?.toInt(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'period': period,
+        'usage_m3': usageM3,
+        'current_value': currentValue,
+      };
+}
+
 /// One meter on the walk: who it belongs to, what the dial said last time, and
 /// whatever has been captured for it so far — whether that came down from the
 /// server or was typed on this handset an hour ago.
@@ -51,8 +74,10 @@ class RoundEntry {
     this.address,
     this.meterNo,
     this.zoneName,
+    this.category,
     this.balance = 0,
     this.usageHistory = const [],
+    this.consumption = const [],
     this.currentValue,
     this.syncedValue,
     this.flag,
@@ -68,11 +93,20 @@ class RoundEntry {
   final String? address;
   final String? meterNo;
   final String? zoneName;
+  final String? category;
+
+  /// What the account owes across every unpaid bill — the arrears figure the
+  /// office shows. Positive means owing; negative is credit.
   final int balance;
   final bool isMetered;
 
   final int previousValue;
+
+  /// Bare figures, newest first, as the flag rules want them.
   final List<int> usageHistory;
+
+  /// The same history with periods attached, for display only.
+  final List<ConsumptionRow> consumption;
 
   /// What this handset holds, synced or not.
   final int? currentValue;
@@ -119,10 +153,12 @@ class RoundEntry {
         address: address,
         meterNo: meterNo,
         zoneName: zoneName,
+        category: category,
         balance: balance,
         isMetered: isMetered,
         previousValue: previousValue,
         usageHistory: usageHistory,
+        consumption: consumption,
         currentValue: currentValue ?? this.currentValue,
         syncedValue: syncedValue ?? this.syncedValue,
         flag: flag ?? this.flag,
@@ -141,11 +177,15 @@ class RoundEntry {
       address: json['address'] as String?,
       meterNo: json['meter_no'] as String?,
       zoneName: (json['zone'] as Map<String, dynamic>?)?['name'] as String?,
+      category: json['category'] as String?,
       balance: (json['balance'] as num?)?.toInt() ?? 0,
       isMetered: json['is_metered'] as bool? ?? true,
       previousValue: (json['previous_value'] as num?)?.toInt() ?? 0,
       usageHistory: ((json['usage_history'] as List?) ?? const [])
           .map((value) => (value as num).toInt())
+          .toList(),
+      consumption: ((json['consumption'] as List?) ?? const [])
+          .map((row) => ConsumptionRow.fromJson(row as Map<String, dynamic>))
           .toList(),
       currentValue: (reading?['current_value'] as num?)?.toInt(),
       syncedValue: (reading?['current_value'] as num?)?.toInt(),

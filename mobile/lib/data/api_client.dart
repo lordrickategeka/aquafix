@@ -3,12 +3,21 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message, {this.statusCode});
+  ApiException(this.message, {this.statusCode, this.fieldErrors = const {}});
 
   final String message;
   final int? statusCode;
 
+  /// Per-field messages from the server's validator, keyed by field name — see
+  /// fail() in src/lib/api-response.js. A form can put these against the box
+  /// that caused them; without them a 422 reads only as "Validation failed",
+  /// which tells the person holding the phone nothing they can act on.
+  final Map<String, String> fieldErrors;
+
   bool get isAuthFailure => statusCode == 401;
+
+  /// The office has taken the permission away since sign-in.
+  bool get isForbidden => statusCode == 403;
 
   /// No response at all — the usual state of affairs on a walk. Distinguished
   /// from a rejection so the app can retry silently instead of alarming anyone.
@@ -121,7 +130,18 @@ class ApiClient {
     final message = body is Map && body['error'] is String
         ? body['error'] as String
         : 'Request failed ($status)';
-    throw ApiException(message, statusCode: status);
+
+    final errors = body is Map ? body['errors'] : null;
+    throw ApiException(
+      message,
+      statusCode: status,
+      fieldErrors: errors is Map
+          ? {
+              for (final entry in errors.entries)
+                entry.key.toString(): entry.value.toString(),
+            }
+          : const {},
+    );
   }
 
   String _describe(DioException error) => switch (error.type) {

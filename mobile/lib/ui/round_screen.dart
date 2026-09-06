@@ -36,8 +36,11 @@ class _RoundBodyState extends State<RoundBody> {
         _ProgressBar(round: round),
         if (round.message != null) _Banner(round: round),
         if (cycle != null && !cycle.isOpen)
-          const _Notice(
-            text: 'This cycle is locked. Readings can no longer be captured.',
+          _Notice(
+            // Names the period and says which kind of locked it is. A reader
+            // who has been told "sync failed" three times deserves the reason.
+            text: '${round.lockedReason ?? 'This cycle is locked.'} Meters can '
+                'still be opened to look up an account.',
             tone: Kuwe.warnBg,
             fg: Kuwe.warnFg,
           ),
@@ -263,12 +266,14 @@ class _Row extends StatelessWidget {
     return Material(
       color: Colors.white,
       child: InkWell(
-        onTap: entry.isLocked || !round.canCapture
-            ? null
-            : () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => CaptureScreen(consumerId: entry.consumerId)),
-                ),
+        // Always open: a meter that cannot be captured can still be looked
+        // up, and being asked "what do I owe?" at the gate does not stop
+        // happening because the office locked the cycle. CaptureScreen decides
+        // whether that is a keypad or a read-only profile.
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => CaptureScreen(consumerId: entry.consumerId)),
+        ),
         child: Opacity(
           opacity: entry.isLocked ? 0.55 : 1,
           child: Padding(

@@ -56,7 +56,7 @@ class SessionController extends ChangeNotifier {
       await _client.setToken(result.token);
       session = result.session;
 
-      if (!result.session.canCaptureReadings && !result.session.canRecordPayments) {
+      if (!result.session.hasFieldAccess) {
         await _client.setToken(null);
         session = null;
         error = 'This account has no field permissions. Ask the office to '

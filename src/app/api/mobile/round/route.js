@@ -18,14 +18,15 @@ import { success, fail } from '@/lib/api-response';
 // shows a different previous reading than the one saveReading measures from,
 // the reader gets a rejection they cannot explain standing at the meter.
 const PRIOR_READINGS_SQL = `
-  SELECT consumer_id, current_value, usage_m3
+  SELECT consumer_id, current_value, usage_m3, period
   FROM (
-    SELECT consumer_id, current_value, usage_m3,
+    SELECT r.consumer_id, r.current_value, r.usage_m3, c.period,
            ROW_NUMBER() OVER (
-             PARTITION BY consumer_id ORDER BY billing_cycle_id DESC
+             PARTITION BY r.consumer_id ORDER BY r.billing_cycle_id DESC
            ) AS rn
-    FROM readings
-    WHERE billing_cycle_id <> :cycleId AND current_value IS NOT NULL
+    FROM readings r
+    JOIN billing_cycles c ON c.id = r.billing_cycle_id
+    WHERE r.billing_cycle_id <> :cycleId AND r.current_value IS NOT NULL
   ) ranked
   WHERE rn <= 3
   ORDER BY consumer_id, rn
@@ -99,9 +100,22 @@ export async function GET(request) {
       is_metered: consumer.is_metered,
       status: consumer.status,
       zone: consumer.zone ? { id: consumer.zone.id, name: consumer.zone.name } : null,
+      // What the account owes: every bill issued and not yet paid off. The app
+      // shows it on the meter's profile so a reader can answer the question
+      // they get asked at the gate.
       balance: consumer.balance,
       previous_value: previous,
+      /* Bare usage figures, oldest rules first. This is what the ported flag
+         rules average over, so its shape is fixed by reading_rules.dart and
+         must not grow fields — the dated version below is for display. */
       usage_history: prior.map((row) => row.usage_m3).filter((value) => value !== null),
+      // The same readings with their period attached, for the profile's
+      // consumption history. Separate so the line above stays a plain list.
+      consumption: prior.map((row) => ({
+        period: row.period,
+        usage_m3: row.usage_m3,
+        current_value: row.current_value,
+      })),
       reading: captured
         ? {
             id: captured.id,

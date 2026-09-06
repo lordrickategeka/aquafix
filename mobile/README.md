@@ -64,9 +64,19 @@ lib/
 ### What you see depends on what you may do
 
 `HomeScreen` builds its tabs from the permissions the server returned at
-sign-in. A meter reader gets readings only, a cashier gets payments only, and
-somebody holding both gets a tab bar. Nobody is shown a screen the server would
-refuse them at.
+sign-in. A meter reader gets readings only, a cashier gets payments only,
+`register-consumers` adds the registration tab, and somebody holding more than
+one gets a tab bar. Nobody is shown a screen the server would refuse them at.
+
+| Permission | Tab |
+| --- | --- |
+| `capture-readings` | Readings |
+| `record-payments` | Payments |
+| `register-consumers` | Register |
+
+Held by `admin` alone for now — a technician role can be given
+`register-consumers` later without touching this app, which reads the
+permission and never the role.
 
 ### Offline is the normal case
 
@@ -81,6 +91,40 @@ cannot afford is showing a reader a number different from the one it will send.
 
 A download preserves rows that still hold an unsent reading, so pulling a fresh
 round mid-walk does not discard the morning's work.
+
+### A refused reading is not left on the handset
+
+The cycle can be locked at the office while a reader is out of signal, and the
+handset only learns it when it next tries to send. What it does then depends on
+why the server said no, which is why every rejection carries a code
+(`SETTLED_CODES` in `../src/lib/readings.js`):
+
+- **Settled** — `cycle-closed`, `billed`, `unmetered`. Nothing anyone types will
+  ever be accepted. The typed value is put back to the last figure the server
+  confirmed and the row stops being pending. Leaving it would show a reading
+  the office does not have, and a reader quoting it at a gate would be quoting a
+  number that was never saved.
+- **The reader's to fix** — a value below the previous reading, say. The reading
+  stays pending with the server's own sentence attached, because the reader
+  stood at that meter and the figure is worth correcting rather than discarding.
+
+The same response carries the cycle's current status, so one refusal locks every
+screen at once rather than waiting for a download the reader may not manage.
+`captureBlockReason()` in `lib/logic/capture_lock.dart` is the single definition
+of whether capture is allowed — the controller enforces it and the meter screen
+explains it, so the two cannot disagree. When it says no, no keypad is shown at
+all; the alternative, a keypad that cannot save, is what left handsets holding
+refused numbers in the first place.
+
+### A meter is also a profile
+
+A locked meter still opens. A reader gets asked what an account owes and what it
+used, and that does not stop being true because the office locked the cycle, so
+every row opens whatever the cycle status — to the keypad when capture is open,
+and to a read-only record when it is not. Phone, zone, category, meter number,
+arrears and the last three cycles' consumption are all in the round payload
+already; `lib/ui/widgets/meter_profile.dart` shows them, inline when the meter
+is locked and in a sheet from the capture screen's toolbar when it is not.
 
 ### The rules are duplicated on purpose
 
@@ -106,6 +150,22 @@ receipt is given, and the app says so in those words.
 The server settles bills oldest-first and returns the balance it arrived at; the
 receipt screen shows that number rather than one the handset worked out.
 
+### Registering a connection is online-only too
+
+For a related reason. The `KW-` account number is handed out by the server
+inside a transaction that reads the highest one already issued; a handset cannot
+invent one without risking two households holding the same number. And a queued
+registration would leave somebody told they are signed up while the office has
+never heard of them. So the form either reaches the office and comes back with a
+real account number — shown in the largest type on the screen, because it is
+what the customer writes down — or it says plainly that nothing was registered.
+
+The zones and categories in the form come from the server on every visit rather
+than being cached, so a zone added at the office this morning is pickable this
+afternoon. That call doubles as a permission check: a 403 means the office has
+withdrawn `register-consumers` since sign-in, and the tab says so instead of
+waiting until a filled-in form is refused.
+
 ### What the server provides
 
 | Call | Purpose |
@@ -115,6 +175,8 @@ receipt screen shows that number rather than one the handset worked out.
 | `GET /api/mobile/round` | the whole walk in one response: cycle, consumers, previous readings, usage history |
 | `POST /api/readings` | the outbox, in one request; answers with what saved and what was rejected |
 | `GET /api/mobile/accounts` | account lookup with balances, for either field role |
+| `GET /api/mobile/consumers` | the zones and categories the registration form offers |
+| `POST /api/mobile/consumers` | registers a connection and answers with its new account number |
 | `POST /api/payments` | records money taken, and returns the balance it reached |
 
 The browser console authenticates with an httpOnly cookie, which a handset

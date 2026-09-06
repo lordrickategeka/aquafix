@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../logic/capture_lock.dart';
 import '../logic/reading_rules.dart';
 import '../logic/round_controller.dart';
 import '../models/round.dart';
 import '../theme.dart';
 import 'format.dart';
 import 'widgets/keypad.dart';
+import 'widgets/meter_profile.dart';
 
 /// One meter. Deliberately a full screen rather than an inline field: the
 /// person using it is standing outdoors, holding a torch, and the number they
 /// type here becomes somebody's bill.
+///
+/// Reachable whether or not readings can still be captured. When they cannot —
+/// the office has locked the cycle, or this meter has been billed — the keypad
+/// is not shown at all and the screen becomes the account's profile. Offering a
+/// keypad that cannot save is what left handsets holding numbers the office had
+/// refused.
 class CaptureScreen extends StatefulWidget {
   const CaptureScreen({super.key, required this.consumerId});
 
@@ -72,6 +80,11 @@ class _CaptureScreenState extends State<CaptureScreen> {
       return const Scaffold(body: Center(child: Text('This meter is no longer in the round.')));
     }
 
+    // One question, asked in one place: may this reading still change? The
+    // controller refuses the same cases, so the two cannot disagree.
+    final lock = captureBlockReason(entry: entry, cycle: round.cycle);
+    if (lock != null) return _ReadOnlyMeter(entry: entry, reason: lock);
+
     // Before the first keypress the screen shows whatever was captured earlier,
     // so re-opening a done meter reads as a review rather than a blank form.
     final effective = _started ? int.tryParse(_typed) : entry.currentValue;
@@ -97,6 +110,13 @@ class _CaptureScreenState extends State<CaptureScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Account details',
+            icon: const Icon(Icons.badge_outlined),
+            onPressed: () => showMeterProfile(context, entry),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -137,6 +157,101 @@ class _CaptureScreenState extends State<CaptureScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The meter as a record rather than a form. Everything the reader might be
+/// asked at the gate is here; the number itself is shown but cannot be touched.
+class _ReadOnlyMeter extends StatelessWidget {
+  const _ReadOnlyMeter({required this.entry, required this.reason});
+
+  final RoundEntry entry;
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(entry.name,
+                style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700)),
+            Text(
+              '${entry.accountNo}${entry.meterNo == null ? '' : ' · ${entry.meterNo}'}',
+              style: const TextStyle(fontSize: 11.5, color: Kuwe.muted),
+            ),
+          ],
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 12),
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
+            decoration: BoxDecoration(
+              color: Kuwe.infoBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.lock_outline, size: 18, color: Kuwe.infoFg),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    reason,
+                    style: const TextStyle(fontSize: 12.5, color: Kuwe.infoFg, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (entry.isMetered)
+            Container(
+              margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Kuwe.line),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'THIS CYCLE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: Kuwe.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    entry.currentValue?.toString() ?? 'not read',
+                    style: const TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                      color: Kuwe.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    entry.usage == null
+                        ? 'previous ${entry.previousValue}'
+                        : '${entry.usage} m³ used · previous ${entry.previousValue}',
+                    style: const TextStyle(fontSize: 12.5, color: Kuwe.mutedDeep),
+                  ),
+                ],
+              ),
+            ),
+          MeterProfile(entry: entry),
         ],
       ),
     );

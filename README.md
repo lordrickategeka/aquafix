@@ -76,7 +76,7 @@ locally. Re-running leaves existing accounts alone unless you pass `--reset-pass
 | `npm run migrate` | Apply pending migrations |
 | `npm run migrate:status` | List applied/pending migrations |
 | `npm run migrate:undo` | Roll back the last migration |
-| `npm run seed` | Seed roles/permissions (`admin`, `user`, `billing-officer`, `meter-reader`, `cashier`) |
+| `npm run seed` | Seed roles/permissions (`admin`, `user`, `billing-officer`, `meter-reader`, `cashier`). Idempotent — re-run it after a pull that adds a permission |
 | `npm run seed:admin -- <email> <password> [role]` | Create a user (default role `admin`); add `--reset-password` to overwrite an existing user's password |
 | `npm run seed:users` | Create one user per role with random passwords printed once; `--domain`, `--password`, `--roles`, `--reset-password` |
 | `npm run seed:demo [-- --fresh]` | Seed zones, tariffs, ~40 consumers and two billed cycles of demo history |

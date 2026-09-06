@@ -18,6 +18,12 @@ const ROLES = ['admin', 'user', 'billing-officer', 'meter-reader', 'cashier'];
 const PERMISSIONS = [
   'manage-users',
   'manage-consumers',
+  // Adding a connection, and nothing else. Narrower than manage-consumers,
+  // which is the permission to change anybody's account: somebody enrolling a
+  // household at their gate needs to create one, not to edit the register.
+  // Held by admin alone for now — a technician role can be given it later
+  // without touching the field app, which reads the permission, not the role.
+  'register-consumers',
   'capture-readings',
   'run-billing',
   'record-payments',

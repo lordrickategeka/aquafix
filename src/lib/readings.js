@@ -36,17 +36,37 @@ export async function usageHistoryFor(consumerId, cycleId, limit = 3) {
   return rows.map((row) => row.usage_m3);
 }
 
-export class ReadingError extends Error {}
+/* Carries a machine-readable reason alongside the sentence shown to a reader.
+   The field app needs the difference: a reading refused because the cycle is
+   closed or the account is already billed is settled and cannot be retyped,
+   while one refused for a bad value is the reader's to correct. Without a code
+   the handset would have to read the prose to tell those apart. */
+export class ReadingError extends Error {
+  constructor(message, code = 'rejected') {
+    super(message);
+    this.name = 'ReadingError';
+    this.code = code;
+  }
+}
+
+/* Reasons a reading cannot change any more, whatever is typed. */
+export const SETTLED_CODES = ['cycle-closed', 'billed', 'unmetered'];
 
 /* Writes one reading. A clean reading is approved on the spot; anything the
    flag rules doubt is left pending for a human, and only approved readings
    reach the billing run. */
 export async function saveReading({ cycle, consumer, currentValue, source = 'web', userId, note }) {
   if (cycle.status !== 'open') {
-    throw new ReadingError(`Cycle ${cycle.period} is ${cycle.status} — readings are closed`);
+    throw new ReadingError(
+      `Cycle ${cycle.period} is ${cycle.status} — readings are closed`,
+      'cycle-closed',
+    );
   }
   if (!consumer.is_metered) {
-    throw new ReadingError(`${consumer.account_no} is unmetered and bills at a flat rate`);
+    throw new ReadingError(
+      `${consumer.account_no} is unmetered and bills at a flat rate`,
+      'unmetered',
+    );
   }
 
   const value =
@@ -55,7 +75,7 @@ export async function saveReading({ cycle, consumer, currentValue, source = 'web
       : Number(currentValue);
 
   if (value !== null && (!Number.isInteger(value) || value < 0)) {
-    throw new ReadingError(`${consumer.account_no}: reading must be a whole number`);
+    throw new ReadingError(`${consumer.account_no}: reading must be a whole number`, 'not-a-number');
   }
 
   /* A cycle being open normally means readings can still change. Once this
@@ -68,6 +88,7 @@ export async function saveReading({ cycle, consumer, currentValue, source = 'web
   if (billed) {
     throw new ReadingError(
       `${consumer.account_no} has already been billed for ${cycle.period} (${billed.invoice_no}) — its reading can no longer change`,
+      'billed',
     );
   }
 
@@ -83,6 +104,7 @@ export async function saveReading({ cycle, consumer, currentValue, source = 'web
   if (value !== null && value < previous) {
     throw new ReadingError(
       `${consumer.account_no}: ${value} is below the previous reading of ${previous}. A meter cannot count backwards — check the digits.`,
+      'below-previous',
     );
   }
 

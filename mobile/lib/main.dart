@@ -5,6 +5,7 @@ import 'data/api_client.dart';
 import 'data/kuwe_api.dart';
 import 'data/local_db.dart';
 import 'logic/payments_controller.dart';
+import 'logic/registration_controller.dart';
 import 'logic/round_controller.dart';
 import 'logic/session_controller.dart';
 import 'theme.dart';
@@ -38,6 +39,7 @@ class KuweMeterApp extends StatelessWidget {
           create: (_) => RoundController(api: api, db: db)..loadFromCache(),
         ),
         ChangeNotifierProvider(create: (_) => PaymentsController(api: api)),
+        ChangeNotifierProvider(create: (_) => RegistrationController(api: api)),
       ],
       child: MaterialApp(
         title: 'Kuwe Meter',

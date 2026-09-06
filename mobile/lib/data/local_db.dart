@@ -20,7 +20,17 @@ class LocalDb {
     final path = p.join(await getDatabasesPath(), 'kuwe_meter.db');
     final db = await openDatabase(
       path,
-      version: 1,
+      version: 2,
+      // v2 added the two columns the meter profile reads. Migrated with ALTER
+      // rather than a rebuild: a handset upgrading mid-walk may be holding
+      // unsent readings, and dropping the table would throw away the morning.
+      // Both are backfilled by the next download.
+      onUpgrade: (db, from, to) async {
+        if (from < 2) {
+          await db.execute('ALTER TABLE entries ADD COLUMN category TEXT');
+          await db.execute("ALTER TABLE entries ADD COLUMN consumption TEXT NOT NULL DEFAULT '[]'");
+        }
+      },
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE cycle (
@@ -41,10 +51,12 @@ class LocalDb {
             address TEXT,
             meter_no TEXT,
             zone_name TEXT,
+            category TEXT,
             balance INTEGER NOT NULL DEFAULT 0,
             is_metered INTEGER NOT NULL DEFAULT 1,
             previous_value INTEGER NOT NULL DEFAULT 0,
             usage_history TEXT NOT NULL DEFAULT '[]',
+            consumption TEXT NOT NULL DEFAULT '[]',
             current_value INTEGER,
             synced_value INTEGER,
             flag TEXT,
@@ -165,6 +177,40 @@ class LocalDb {
     );
   }
 
+  /// For a rejection nothing can fix — the cycle closed, or the account has
+  /// already been billed. The typed value is put back to whatever the server
+  /// last confirmed and the row stops being pending, because there is nothing
+  /// left to send.
+  ///
+  /// This is the whole point of keeping synced_value beside current_value: a
+  /// refused edit must not leave the handset showing a number the office does
+  /// not have. A reader quoting that number at a gate would be quoting a
+  /// reading that was never accepted.
+  Future<void> revertToSynced(int consumerId, String message) async {
+    final rows = await _db.query(
+      'entries',
+      columns: ['synced_value'],
+      where: 'consumer_id = ?',
+      whereArgs: [consumerId],
+      limit: 1,
+    );
+    final synced = rows.isEmpty ? null : rows.first['synced_value'] as int?;
+
+    await _db.update(
+      'entries',
+      {'current_value': synced, 'pending': 0, 'failure': message},
+      where: 'consumer_id = ?',
+      whereArgs: [consumerId],
+    );
+  }
+
+  /// The office locked or closed the cycle while this handset was away. Stored
+  /// so every screen locks at once, without waiting for a fresh download the
+  /// reader may not be able to make.
+  Future<void> updateCycleStatus(String status) async {
+    await _db.update('cycle', {'status': status});
+  }
+
   Future<void> clear() async {
     await _db.delete('entries');
     await _db.delete('cycle');
@@ -178,10 +224,12 @@ class LocalDb {
         'address': entry.address,
         'meter_no': entry.meterNo,
         'zone_name': entry.zoneName,
+        'category': entry.category,
         'balance': entry.balance,
         'is_metered': entry.isMetered ? 1 : 0,
         'previous_value': entry.previousValue,
         'usage_history': jsonEncode(entry.usageHistory),
+        'consumption': jsonEncode([for (final row in entry.consumption) row.toJson()]),
         'current_value': entry.currentValue,
         'synced_value': entry.syncedValue,
         'flag': entry.flag,
@@ -198,11 +246,15 @@ class LocalDb {
         address: row['address'] as String?,
         meterNo: row['meter_no'] as String?,
         zoneName: row['zone_name'] as String?,
+        category: row['category'] as String?,
         balance: (row['balance'] as num?)?.toInt() ?? 0,
         isMetered: (row['is_metered'] as int? ?? 1) == 1,
         previousValue: (row['previous_value'] as num?)?.toInt() ?? 0,
         usageHistory: (jsonDecode(row['usage_history'] as String? ?? '[]') as List)
             .map((value) => (value as num).toInt())
+            .toList(),
+        consumption: (jsonDecode(row['consumption'] as String? ?? '[]') as List)
+            .map((row) => ConsumptionRow.fromJson(row as Map<String, dynamic>))
             .toList(),
         currentValue: (row['current_value'] as num?)?.toInt(),
         syncedValue: (row['synced_value'] as num?)?.toInt(),
